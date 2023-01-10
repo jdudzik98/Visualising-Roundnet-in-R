@@ -15,9 +15,7 @@ library(dplyr)
 library(stringr)
 library(magrittr)
 
-# Data manipulation -------------------------------------------------------
-
-# _Basic columns ----------------------------------------------------------
+# Data manipulation - calculate columns ----------------------------------------
 
 ### Generate putaway columns
 
@@ -157,7 +155,7 @@ shorten_action_def <- function(input) {
 calc_touches_def <- function(input) {
   DTR <- c(0,0,0,0)
   DTNR <- c(0,0,0,0)
-  if(str_sub(input,-1,-1) == "W" && nchar(input)>3) {
+  if(str_sub(input,-1,-1) %in%  c("W","E") && nchar(input)>3) {
     # Case of put away after defensive touch - populating both DTNR and DTR
     DTR[as.numeric(str_sub(input, -2,-2))] = 1
     loc_input <- substr(input, 3, nchar(input)-2)
@@ -167,7 +165,7 @@ calc_touches_def <- function(input) {
     }
   }
   else {
-    if(str_sub(input, -1, -1) %in%  c("L","E") && nchar(input)>3) {
+    if(str_sub(input, -1, -1) == "L" && nchar(input)>3) {
       # Case of Error/lost point after defensive touch - populating both DTR only
       DTNR[as.numeric(str_sub(input, -2,-2))] = 1
       loc_input <- substr(input, 3, nchar(input)-2)
@@ -274,51 +272,68 @@ for (i in 1:nrow(df)){
   df$SR_4[i] <- loc_o[4]
 }
 
+# Calculating Total Spikes as sum of Spikes Returned (SR) + putaways
+df$TS_1 <- df$SR_1 + df$putaway_1
+df$TS_2 <- df$SR_2 + df$putaway_2
+df$TS_3 <- df$SR_3 + df$putaway_3
+df$TS_4 <- df$SR_4 + df$putaway_4
 
 
-t <- df[,c(10,42:53)]
 
 
 
-
-
-
-# Iterate through the rows of the data frame
-for (i in 1:nrow(df2)) {
-  # Access data for each column by column name
-  a <- toString(df2[i, "Action"])
-  for (char in strsplit(a, "")[[1]]) {
-    print(char)
-  }
-  
-  # Calculate the new value based on the data in the row
-  new_value <- letter
-  # Append the new value to the vector
-  new_values <- c(new_values, new_value)
-}
 
 
 
 
 # Aggregating -------------------------------------------------------------
 
+# Building a cumulative sum
 
+Data <- df %>% 
+  group_by(GameID) %>% 
+  mutate(putaway_1cs = cumsum(putaway_1),
+         putaway_2cs = cumsum(putaway_2),
+         putaway_3cs = cumsum(putaway_3),
+         putaway_4cs = cumsum(putaway_4),
+         Aced_1cs = cumsum(Aced_1),
+         Aced_2cs = cumsum(Aced_2),
+         Aced_3cs = cumsum(Aced_3),
+         Aced_4cs = cumsum(Aced_4),
+         Ace_1cs = cumsum(Ace_1),
+         Ace_2cs = cumsum(Ace_2),
+         Ace_3cs = cumsum(Ace_3),
+         Ace_4cs = cumsum(Ace_4),
+         Serve_made_1cs = cumsum(Serve_made_1),
+         Serve_made_2cs = cumsum(Serve_made_2),
+         Serve_made_3cs = cumsum(Serve_made_3),
+         Serve_made_4cs = cumsum(Serve_made_4),
+         Double_fault_1cs = cumsum(Double_fault_1),
+         Double_fault_2cs = cumsum(Double_fault_2),
+         Double_fault_3cs = cumsum(Double_fault_3),
+         Double_fault_4cs = cumsum(Double_fault_4),
+         Error_1cs = cumsum(Error_1),
+         Error_2cs = cumsum(Error_2),
+         Error_3cs = cumsum(Error_3),
+         Error_4cs = cumsum(Error_4),
+         DTR_1cs = cumsum(DTR_1),
+         DTR_2cs = cumsum(DTR_2),
+         DTR_3cs = cumsum(DTR_3),
+         DTR_4cs = cumsum(DTR_4),
+         DTNR_1cs = cumsum(DTNR_1),
+         DTNR_2cs = cumsum(DTNR_2),
+         DTNR_3cs = cumsum(DTNR_3),
+         DTNR_4cs = cumsum(DTNR_4),
+         SR_1cs = cumsum(SR_1),
+         SR_2cs = cumsum(SR_2),
+         SR_3cs = cumsum(SR_3),
+         SR_4cs = cumsum(SR_4),
+         TS_1cs = cumsum(TS_1),
+         TS_2cs = cumsum(TS_2),
+         TS_3cs = cumsum(TS_3),
+         TS_4cs = cumsum(TS_4),
+         )
 
+#keeping only agregated stats
 
-# create a dataframe with a column of numbers and a grouping column
-df <- data.frame(x = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), group = c(1, 1, 1, 2, 2, 2, 3, 3, 3, 3))
-
-
-# load the data.table package
-library(data.table)
-
-# convert the dataframe to a data.table
-dt <- data.table(df)
-
-# calculate the running sum for each group
-dt[, running_sum := cumsum(x), by = group]
-
-# view the data.table
-dt
-
-calc_touches_def("414L")
+Data <- Data[,c(1:10,58:97)]
