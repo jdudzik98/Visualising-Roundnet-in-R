@@ -68,15 +68,18 @@ df <- df %>%
 # Add blank columns
 df[c('Serve_made_1','Serve_made_2','Serve_made_3','Serve_made_4')] <- NA
 
+
+
+
 # Assign values to columns
 df <- df %>%
-  mutate(Serve_made_1 = ifelse(str_detect(str_sub(Action, -3,-1), "^1[^D]*$"), 1, 0))
+  mutate(Serve_made_1 = ifelse(str_detect(str_sub(Action, 0, 3), "^1[^D]*$"), 1, 0))
 df <- df %>%
-  mutate(Serve_made_2 = ifelse(str_detect(str_sub(Action, -3,-1), "^2[^D]*$"), 1, 0))
+  mutate(Serve_made_2 = ifelse(str_detect(str_sub(Action, 0, 3), "^2[^D]*$"), 1, 0))
 df <- df %>%
-  mutate(Serve_made_3 = ifelse(str_detect(str_sub(Action, -3,-1), "^3[^D]*$"), 1, 0))
+  mutate(Serve_made_3 = ifelse(str_detect(str_sub(Action, 0, 3), "^3[^D]*$"), 1, 0))
 df <- df %>%
-  mutate(Serve_made_4 = ifelse(str_detect(str_sub(Action, -3,-1), "^4[^D]*$"), 1, 0))
+  mutate(Serve_made_4 = ifelse(str_detect(str_sub(Action, 0, 3), "^4[^D]*$"), 1, 0))
 
 ### Generate Double_fault columns
 
@@ -290,6 +293,7 @@ df$TS_4 <- df$SR_4 + df$putaway_4
 
 # Building a cumulative sum
 
+# Problem with group by!
 Data <- df %>% 
   group_by(GameID) %>% 
   mutate(putaway_1cs = cumsum(putaway_1),
@@ -337,3 +341,35 @@ Data <- df %>%
 #keeping only agregated stats
 
 Data <- Data[,c(1:10,58:97)]
+coalesce(0/0, 1)
+
+# Calculating stats -------------------------------------------------------
+
+# Intrducing RPR Statistics, we will start with hitting. Roundnet Player Rating
+# (RPR) statistics are calculated based on the document presented by Max Model
+# (https://docs.google.com/document/d/14VjayAbhGYx1feoCXWjmilP3eZj_-WcoWcjk9LMJISw)
+
+Data$Hitting_1 <- 20-20*coalesce(Data$SR_1cs/Data$TS_1cs, 0)
+Data$Hitting_2 <- 20-20*coalesce(Data$SR_2cs/Data$TS_2cs, 0)
+Data$Hitting_3 <- 20-20*coalesce(Data$SR_3cs/Data$TS_3cs, 0)
+Data$Hitting_4 <- 20-20*coalesce(Data$SR_4cs/Data$TS_4cs, 0)
+
+Data$Defense_1 <- Data$DTNR_1cs+0.4*Data$Hitting_1*Data$DTR_1cs
+Data$Defense_2 <- Data$DTNR_2cs+0.4*Data$Hitting_2*Data$DTR_2cs
+Data$Defense_3 <- Data$DTNR_3cs+0.4*Data$Hitting_3*Data$DTR_3cs
+Data$Defense_4 <- Data$DTNR_4cs+0.4*Data$Hitting_4*Data$DTR_4cs
+
+Data$Serving_1 <- 5.5*Data$Ace_1cs + 15*(Data$Serve_made_1cs/(Data$Serve_made_1cs+Data$Double_fault_1cs))
+Data$Serving_2 <- 5.5*Data$Ace_2cs + 15*(Data$Serve_made_2cs/(Data$Serve_made_2cs+Data$Double_fault_2cs))
+Data$Serving_3 <- 5.5*Data$Ace_3cs + 15*(Data$Serve_made_3cs/(Data$Serve_made_3cs+Data$Double_fault_3cs))
+Data$Serving_4 <- 5.5*Data$Ace_4cs + 15*(Data$Serve_made_4cs/(Data$Serve_made_4cs+Data$Double_fault_4cs))
+
+Data$Cleanliness_1 <- 20-5*(Data$Error_1cs) - 2*(Data$Aced_1cs)
+Data$Cleanliness_2 <- 20-5*(Data$Error_2cs) - 2*(Data$Aced_2cs)
+Data$Cleanliness_3 <- 20-5*(Data$Error_3cs) - 2*(Data$Aced_3cs)
+Data$Cleanliness_4 <- 20-5*(Data$Error_4cs) - 2*(Data$Aced_4cs)
+
+Data$healthcheck <- 15*(Data$Serve_made_1cs/(Data$Serve_made_1cs+Data$Double_fault_1cs))
+Testing <- Data[1:38,c(10,51:66)]
+testingsrv <- Data[1:10, c(10, 67, 56, 19, 23,27)]
+
