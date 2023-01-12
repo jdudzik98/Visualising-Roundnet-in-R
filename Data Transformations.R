@@ -339,8 +339,7 @@ Data <- df %>%
 
 #keeping only agregated stats
 
-Data <- Data[,c(1:10,58:97)]
-coalesce(0/0, 1)
+Data <- Data[,c(1:10,15,58:97)]
 
 # Calculating stats -------------------------------------------------------
 
@@ -372,60 +371,62 @@ Data$Cleanliness_4 <- 20-5*(Data$Error_4cs) - 2*(Data$Aced_4cs)
 # Building Scoring --------------------------------------------------------
 
 
-df2 <- df[,c(1:10,15)]
-df2 <- df2 %>% group_by(GameID, Game) %>% mutate(point = row_number(), score12 = 0, score34 = 1)
+Data <- Data %>% group_by(GameID, Game) %>% mutate(point = row_number(), score12 = 0, score34 = 1)
 
-for (row in 2:nrow(df2)){
+for (row in 2:nrow(Data)){
   # Considering the case of an initial point
-  if(df2$GameID[row]!= df2$GameID[row-1] || df2$Game[row]!= df2$Game[row-1]){
-    if (df2$`Break?`[row] == 1){
-      if(substr(df2$Action[row],1,1) %in% c("1","2",1,2)){
-        df2$score12[row] = 1
-        df2$score34[row] = 0
+  if(Data$GameID[row]!= Data$GameID[row-1] || Data$Game[row]!= Data$Game[row-1]){
+    if (Data$`Break?`[row] == 1){
+      if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
+        Data$score12[row] = 1
+        Data$score34[row] = 0
       }
       else{
-        df2$score34[row] = 1
-        df2$score12[row] = 0
+        Data$score34[row] = 1
+        Data$score12[row] = 0
       }
-      #df2$score12[row] = df2$score12[row-1]+1
+      #Data$score12[row] = Data$score12[row-1]+1
     }
     # Considering the case of point taken by the receiving team
     else{
-      if(substr(df2$Action[row],1,1) %in% c("1","2",1,2)){
+      if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
         
-        df2$score34[row] = 1
-        df2$score12[row] = 0
+        Data$score34[row] = 1
+        Data$score12[row] = 0
       }
       else{
-        df2$score12[row] = 1
-        df2$score34[row] = 0
+        Data$score12[row] = 1
+        Data$score34[row] = 0
       }
     
     }
   }
   # Considering the case of a break (point received by the serving team)
-  else if (df2$`Break?`[row] == 1){
-    if(substr(df2$Action[row],1,1) %in% c("1","2",1,2)){
-      df2$score12[row] = df2$score12[row-1]+1
-      df2$score34[row] = df2$score34[row-1]
+  else if (Data$`Break?`[row] == 1){
+    if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
+      Data$score12[row] = Data$score12[row-1]+1
+      Data$score34[row] = Data$score34[row-1]
     }
     else{
-      df2$score34[row] = df2$score34[row-1]+1
-      df2$score12[row] = df2$score12[row-1]
+      Data$score34[row] = Data$score34[row-1]+1
+      Data$score12[row] = Data$score12[row-1]
     }
-    #df2$score12[row] = df2$score12[row-1]+1
+    #Data$score12[row] = Data$score12[row-1]+1
   }
   # Considering the case of point taken by the receiving team
   else{
-    if(substr(df2$Action[row],1,1) %in% c("1","2",1,2)){
+    if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
       
-      df2$score34[row] = df2$score34[row-1]+1
-      df2$score12[row] = df2$score12[row-1]
+      Data$score34[row] = Data$score34[row-1]+1
+      Data$score12[row] = Data$score12[row-1]
     }
     else{
-      df2$score12[row] = df2$score12[row-1]+1
-      df2$score34[row] = df2$score34[row-1]
+      Data$score12[row] = Data$score12[row-1]+1
+      Data$score34[row] = Data$score34[row-1]
     }
   }
 }
 
+match_stats <- Data %>%
+  group_by(GameID, Game) %>%
+  slice_tail(n = 1)
