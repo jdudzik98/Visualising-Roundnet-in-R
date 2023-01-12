@@ -293,9 +293,8 @@ df$TS_4 <- df$SR_4 + df$putaway_4
 
 # Building a cumulative sum
 
-# Problem with group by!
 Data <- df %>% 
-  group_by(GameID) %>% 
+  group_by(GameID, Game) %>% 
   mutate(putaway_1cs = cumsum(putaway_1),
          putaway_2cs = cumsum(putaway_2),
          putaway_3cs = cumsum(putaway_3),
@@ -359,17 +358,14 @@ Data$Defense_2 <- Data$DTNR_2cs+0.4*Data$Hitting_2*Data$DTR_2cs
 Data$Defense_3 <- Data$DTNR_3cs+0.4*Data$Hitting_3*Data$DTR_3cs
 Data$Defense_4 <- Data$DTNR_4cs+0.4*Data$Hitting_4*Data$DTR_4cs
 
-Data$Serving_1 <- 5.5*Data$Ace_1cs + 15*(Data$Serve_made_1cs/(Data$Serve_made_1cs+Data$Double_fault_1cs))
-Data$Serving_2 <- 5.5*Data$Ace_2cs + 15*(Data$Serve_made_2cs/(Data$Serve_made_2cs+Data$Double_fault_2cs))
-Data$Serving_3 <- 5.5*Data$Ace_3cs + 15*(Data$Serve_made_3cs/(Data$Serve_made_3cs+Data$Double_fault_3cs))
-Data$Serving_4 <- 5.5*Data$Ace_4cs + 15*(Data$Serve_made_4cs/(Data$Serve_made_4cs+Data$Double_fault_4cs))
+Data$Serving_1 <- 5.5*Data$Ace_1cs + 15*coalesce((Data$Serve_made_1cs/(Data$Serve_made_1cs+Data$Double_fault_1cs)),0)
+Data$Serving_2 <- 5.5*Data$Ace_2cs + 15*coalesce((Data$Serve_made_2cs/(Data$Serve_made_2cs+Data$Double_fault_2cs)),0)
+Data$Serving_3 <- 5.5*Data$Ace_3cs + 15*coalesce((Data$Serve_made_3cs/(Data$Serve_made_3cs+Data$Double_fault_3cs)),0)
+Data$Serving_4 <- 5.5*Data$Ace_4cs + 15*coalesce((Data$Serve_made_4cs/(Data$Serve_made_4cs+Data$Double_fault_4cs)),0)
 
 Data$Cleanliness_1 <- 20-5*(Data$Error_1cs) - 2*(Data$Aced_1cs)
 Data$Cleanliness_2 <- 20-5*(Data$Error_2cs) - 2*(Data$Aced_2cs)
 Data$Cleanliness_3 <- 20-5*(Data$Error_3cs) - 2*(Data$Aced_3cs)
 Data$Cleanliness_4 <- 20-5*(Data$Error_4cs) - 2*(Data$Aced_4cs)
 
-Data$healthcheck <- 15*(Data$Serve_made_1cs/(Data$Serve_made_1cs+Data$Double_fault_1cs))
-Testing <- Data[1:38,c(10,51:66)]
-testingsrv <- Data[1:10, c(10, 67, 56, 19, 23,27)]
 
