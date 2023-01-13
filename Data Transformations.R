@@ -8,7 +8,7 @@
 #install.packages("data.table")
 #install.packages("magrittr")
 library(readr)
-df <- read_delim("Roundnet_dataset.csv", 
+df <- read_delim("Roundnet_dataset2.csv", 
                                delim = ";", escape_double = FALSE, trim_ws = TRUE)
 
 library(dplyr)
@@ -281,12 +281,50 @@ df$TS_2 <- df$SR_2 + df$putaway_2
 df$TS_3 <- df$SR_3 + df$putaway_3
 df$TS_4 <- df$SR_4 + df$putaway_4
 
+# calculating Breaks and Net crossings
+
+df$Crossings <- 0
+for (row in 1:nrow(df)){
+  if (str_sub(df$Action[row], -1,-1) == "D"){
+    df$Crossings[row] = 0
+  }
+  else if (str_sub(df$Action[row], -1,-1) == "A"){
+    df$Crossings[row] = 1
+  }
+  else if (df$DTR_1[row]+df$DTR_2[row]+df$DTR_3[row]+df$DTR_4[row] > 0){
+    df$Crossings[row] = df$DTR_1[row]+df$DTR_2[row]+df$DTR_3[row]+df$DTR_4[row] +2 
+  }
+  else if (str_sub(df$Action[row], -1,-1) == "W"){
+    df$Crossings[row] = 2
+  }
+  else {
+    df$Crossings[row] = 1+df$DTNR_1[row]+df$DTNR_2[row]+df$DTNR_3[row]+df$DTNR_4[row]
+  }
+}
 
 
+df$Break_reason <- 0
+df$Break_team <- 0
 
-
-
-
+for (row in 1:nrow(df)){
+  if (df$`Break?`[row] == "1"){
+    if (str_sub(df$Action[row], 1, 1) %in% c("1","2")){
+      df$Break_team[row] = "12"
+    }
+    else {
+      df$Break_team[row] = "34"
+    }
+    if (str_sub(df$Action[row],-1,-1) == "A"){
+      df$Break_reason[row] = "Ace"
+    }
+    else if (df$DTR_1[row]+df$DTR_2[row]+df$DTR_3[row]+df$DTR_4[row] > 0){
+      df$Break_reason[row] = "Defence"
+    }
+    else {
+      df$Break_reason[row] = "Opponent Error"
+    }
+  }
+}
 
 
 # Aggregating -------------------------------------------------------------
@@ -335,11 +373,12 @@ Data <- df %>%
          TS_2cs = cumsum(TS_2),
          TS_3cs = cumsum(TS_3),
          TS_4cs = cumsum(TS_4),
+         crossing_cs =cumsum(Crossings)
          )
 
 #keeping only agregated stats
 
-Data <- Data[,c(1:10,15,58:97)]
+Data <- Data[,c(1:11,16,59:102)]
 
 # Calculating stats -------------------------------------------------------
 
@@ -427,6 +466,29 @@ for (row in 2:nrow(Data)){
   }
 }
 
+# Grouping stats by game --------------------------------------------------
+
+
 match_stats <- Data %>%
   group_by(GameID, Game) %>%
   slice_tail(n = 1)
+
+match_stats$Aces <- match_stats$Ace_1cs + match_stats$Ace_2cs + 
+  match_stats$Ace_3cs + match_stats$Ace_4cs
+
+match_stats$Rallies <- match_stats$DTR_1cs + match_stats$DTR_2cs + 
+  match_stats$DTR_3cs + match_stats$DTR_4cs
+
+match_stats$serves_made <- match_stats$Serve_made_1cs + 
+  match_stats$Serve_made_2cs + match_stats$Serve_made_3cs + match_stats$Serve_made_4cs
+
+match_stats$Double_faults <- match_stats$Double_fault_1cs + 
+  match_stats$Double_fault_2cs + match_stats$Double_fault_3cs + match_stats$Double_fault_4cs
+
+
+match_stats$Rallies_percentage <- round(100*match_stats$Rallies/match_stats$point,2)
+match_stats$Aces_percentage <- round(100*match_stats$Aces/match_stats$point,2)
+match_stats$Avg_crossings <- round(match_stats$crossing_cs/match_stats$point,2)
+match_stats$succesful_serves_percentage <- round(100*match_stats$serves_made/
+                                                   (match_stats$serves_made+
+                                                      match_stats$Double_faults))

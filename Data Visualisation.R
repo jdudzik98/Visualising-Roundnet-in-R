@@ -1,3 +1,12 @@
+
+library(ggradar)
+library(dplyr)
+library(scales)
+library(tibble)
+library(tidyr)
+#install.packages("plotly")
+library(plotly)
+
 df_long <- match_stats %>%
   gather(key = "group", value = "value", Player1:Player4) %>%
   select(group, value, GameID, Game, Hitting_1:Hitting_4, Serving_1:Serving_4, Defense_1:Defense_4, Cleanliness_1:Cleanliness_4) %>%
@@ -24,11 +33,34 @@ df_long$Defense <- df_long$Defense/max(df_long$Defense)
 df_long$Cleanliness <- df_long$Cleanliness/max(df_long$Cleanliness)
 
 vis <- df_long[1:4,c(1, 21:24)]
-
-library(ggradar)
-library(dplyr)
-library(scales)
-library(tibble)
+match_stats$Tournament
 
 ggradar(vis)
 
+
+# Scatterplot Rallies vs Aces ---------------------------------------------
+
+scatter <- ggplot(match_stats, aes(x = Rallies_percentage, y = Aces_percentage,
+                                   color = Category, size = point, 
+                                   text = paste("Tournament: ", Tournament))) +
+  geom_point() +
+  labs(title = 'Aces percentage vs Rallies percentage plot',
+       subtitle = 'Upper right corner presents the most interesting matches',
+       x = 'Rallies %' , y = 'Aces %')  + 
+  theme_bw() 
+ggplotly(scatter)
+
+
+# Funnel chart ------------------------------------------------------------
+
+funnel_data <- df %>%
+  filter(GameID == "1", Game == "2", Break_team != 0, Break_team == "34") %>%
+  group_by(Break_team, Break_reason) %>% summarize(occurrence_count = n())
+
+  fig <- plot_ly(
+    type = "funnelarea",
+    textinfo = c("value", "text"),
+    text = as.vector(t(funnel_data$Break_reason)),
+    values = as.vector(t(funnel_data$occurrence_count)))
+  
+  fig
