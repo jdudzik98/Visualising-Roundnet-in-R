@@ -2,7 +2,7 @@
 
 
 # _packages and loading ---------------------------------------------------
-
+setwd("C:/Users/jdudzik/Documents/Studia/Adv Vis in R/Visualising-Roundnet-in-R")
 
 #install.packages("stringr")
 #install.packages("data.table")
