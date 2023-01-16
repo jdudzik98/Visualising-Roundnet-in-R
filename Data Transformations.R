@@ -331,7 +331,7 @@ for (row in 1:nrow(df)){
 
 # Building a cumulative sum
 
-Data <- df %>% 
+cs_df <- df %>% 
   group_by(GameID, Game) %>% 
   mutate(putaway_1cs = cumsum(putaway_1),
          putaway_2cs = cumsum(putaway_2),
@@ -378,7 +378,7 @@ Data <- df %>%
 
 #keeping only agregated stats
 
-Data <- Data[,c(1:11,16,59:102)]
+cs_df <- cs_df[,c(1:11,16,59:102)]
 
 # Calculating stats -------------------------------------------------------
 
@@ -386,82 +386,82 @@ Data <- Data[,c(1:11,16,59:102)]
 # (RPR) statistics are calculated based on the document presented by Max Model
 # (https://docs.google.com/document/d/14VjayAbhGYx1feoCXWjmilP3eZj_-WcoWcjk9LMJISw)
 
-Data$Hitting_1 <- 20-20*coalesce(Data$SR_1cs/Data$TS_1cs, 0)
-Data$Hitting_2 <- 20-20*coalesce(Data$SR_2cs/Data$TS_2cs, 0)
-Data$Hitting_3 <- 20-20*coalesce(Data$SR_3cs/Data$TS_3cs, 0)
-Data$Hitting_4 <- 20-20*coalesce(Data$SR_4cs/Data$TS_4cs, 0)
+cs_df$Hitting_1 <- 20-20*coalesce(cs_df$SR_1cs/cs_df$TS_1cs, 0)
+cs_df$Hitting_2 <- 20-20*coalesce(cs_df$SR_2cs/cs_df$TS_2cs, 0)
+cs_df$Hitting_3 <- 20-20*coalesce(cs_df$SR_3cs/cs_df$TS_3cs, 0)
+cs_df$Hitting_4 <- 20-20*coalesce(cs_df$SR_4cs/cs_df$TS_4cs, 0)
 
-Data$Defense_1 <- Data$DTNR_1cs+0.4*Data$Hitting_1*Data$DTR_1cs
-Data$Defense_2 <- Data$DTNR_2cs+0.4*Data$Hitting_2*Data$DTR_2cs
-Data$Defense_3 <- Data$DTNR_3cs+0.4*Data$Hitting_3*Data$DTR_3cs
-Data$Defense_4 <- Data$DTNR_4cs+0.4*Data$Hitting_4*Data$DTR_4cs
+cs_df$Defense_1 <- cs_df$DTNR_1cs+0.4*cs_df$Hitting_1*cs_df$DTR_1cs
+cs_df$Defense_2 <- cs_df$DTNR_2cs+0.4*cs_df$Hitting_2*cs_df$DTR_2cs
+cs_df$Defense_3 <- cs_df$DTNR_3cs+0.4*cs_df$Hitting_3*cs_df$DTR_3cs
+cs_df$Defense_4 <- cs_df$DTNR_4cs+0.4*cs_df$Hitting_4*cs_df$DTR_4cs
 
-Data$Serving_1 <- 5.5*Data$Ace_1cs + 15*coalesce((Data$Serve_made_1cs/(Data$Serve_made_1cs+Data$Double_fault_1cs)),0)
-Data$Serving_2 <- 5.5*Data$Ace_2cs + 15*coalesce((Data$Serve_made_2cs/(Data$Serve_made_2cs+Data$Double_fault_2cs)),0)
-Data$Serving_3 <- 5.5*Data$Ace_3cs + 15*coalesce((Data$Serve_made_3cs/(Data$Serve_made_3cs+Data$Double_fault_3cs)),0)
-Data$Serving_4 <- 5.5*Data$Ace_4cs + 15*coalesce((Data$Serve_made_4cs/(Data$Serve_made_4cs+Data$Double_fault_4cs)),0)
+cs_df$Serving_1 <- 5.5*cs_df$Ace_1cs + 15*coalesce((cs_df$Serve_made_1cs/(cs_df$Serve_made_1cs+cs_df$Double_fault_1cs)),0)
+cs_df$Serving_2 <- 5.5*cs_df$Ace_2cs + 15*coalesce((cs_df$Serve_made_2cs/(cs_df$Serve_made_2cs+cs_df$Double_fault_2cs)),0)
+cs_df$Serving_3 <- 5.5*cs_df$Ace_3cs + 15*coalesce((cs_df$Serve_made_3cs/(cs_df$Serve_made_3cs+cs_df$Double_fault_3cs)),0)
+cs_df$Serving_4 <- 5.5*cs_df$Ace_4cs + 15*coalesce((cs_df$Serve_made_4cs/(cs_df$Serve_made_4cs+cs_df$Double_fault_4cs)),0)
 
-Data$Cleanliness_1 <- 20-5*(Data$Error_1cs) - 2*(Data$Aced_1cs)
-Data$Cleanliness_2 <- 20-5*(Data$Error_2cs) - 2*(Data$Aced_2cs)
-Data$Cleanliness_3 <- 20-5*(Data$Error_3cs) - 2*(Data$Aced_3cs)
-Data$Cleanliness_4 <- 20-5*(Data$Error_4cs) - 2*(Data$Aced_4cs)
+cs_df$Cleanliness_1 <- 20-5*(cs_df$Error_1cs) - 2*(cs_df$Aced_1cs)
+cs_df$Cleanliness_2 <- 20-5*(cs_df$Error_2cs) - 2*(cs_df$Aced_2cs)
+cs_df$Cleanliness_3 <- 20-5*(cs_df$Error_3cs) - 2*(cs_df$Aced_3cs)
+cs_df$Cleanliness_4 <- 20-5*(cs_df$Error_4cs) - 2*(cs_df$Aced_4cs)
 
 
 # Building Scoring --------------------------------------------------------
 
 
-Data <- Data %>% group_by(GameID, Game) %>% mutate(point = row_number(), score12 = 0, score34 = 1)
+cs_df <- cs_df %>% group_by(GameID, Game) %>% mutate(point = row_number(), score12 = 0, score34 = 1)
 
-for (row in 2:nrow(Data)){
+for (row in 2:nrow(cs_df)){
   # Considering the case of an initial point
-  if(Data$GameID[row]!= Data$GameID[row-1] || Data$Game[row]!= Data$Game[row-1]){
-    if (Data$`Break?`[row] == 1){
-      if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
-        Data$score12[row] = 1
-        Data$score34[row] = 0
+  if(cs_df$GameID[row]!= cs_df$GameID[row-1] || cs_df$Game[row]!= cs_df$Game[row-1]){
+    if (cs_df$`Break?`[row] == 1){
+      if(substr(cs_df$Action[row],1,1) %in% c("1","2",1,2)){
+        cs_df$score12[row] = 1
+        cs_df$score34[row] = 0
       }
       else{
-        Data$score34[row] = 1
-        Data$score12[row] = 0
+        cs_df$score34[row] = 1
+        cs_df$score12[row] = 0
       }
-      #Data$score12[row] = Data$score12[row-1]+1
+      #cs_df$score12[row] = cs_df$score12[row-1]+1
     }
     # Considering the case of point taken by the receiving team
     else{
-      if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
+      if(substr(cs_df$Action[row],1,1) %in% c("1","2",1,2)){
         
-        Data$score34[row] = 1
-        Data$score12[row] = 0
+        cs_df$score34[row] = 1
+        cs_df$score12[row] = 0
       }
       else{
-        Data$score12[row] = 1
-        Data$score34[row] = 0
+        cs_df$score12[row] = 1
+        cs_df$score34[row] = 0
       }
     
     }
   }
   # Considering the case of a break (point received by the serving team)
-  else if (Data$`Break?`[row] == 1){
-    if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
-      Data$score12[row] = Data$score12[row-1]+1
-      Data$score34[row] = Data$score34[row-1]
+  else if (cs_df$`Break?`[row] == 1){
+    if(substr(cs_df$Action[row],1,1) %in% c("1","2",1,2)){
+      cs_df$score12[row] = cs_df$score12[row-1]+1
+      cs_df$score34[row] = cs_df$score34[row-1]
     }
     else{
-      Data$score34[row] = Data$score34[row-1]+1
-      Data$score12[row] = Data$score12[row-1]
+      cs_df$score34[row] = cs_df$score34[row-1]+1
+      cs_df$score12[row] = cs_df$score12[row-1]
     }
-    #Data$score12[row] = Data$score12[row-1]+1
+    #cs_df$score12[row] = cs_df$score12[row-1]+1
   }
   # Considering the case of point taken by the receiving team
   else{
-    if(substr(Data$Action[row],1,1) %in% c("1","2",1,2)){
+    if(substr(cs_df$Action[row],1,1) %in% c("1","2",1,2)){
       
-      Data$score34[row] = Data$score34[row-1]+1
-      Data$score12[row] = Data$score12[row-1]
+      cs_df$score34[row] = cs_df$score34[row-1]+1
+      cs_df$score12[row] = cs_df$score12[row-1]
     }
     else{
-      Data$score12[row] = Data$score12[row-1]+1
-      Data$score34[row] = Data$score34[row-1]
+      cs_df$score12[row] = cs_df$score12[row-1]+1
+      cs_df$score34[row] = cs_df$score34[row-1]
     }
   }
 }
@@ -469,7 +469,7 @@ for (row in 2:nrow(Data)){
 # Grouping stats by game --------------------------------------------------
 
 
-match_stats <- Data %>%
+match_stats <- cs_df %>%
   group_by(GameID, Game) %>%
   slice_tail(n = 1)
 

@@ -19,7 +19,7 @@ df_long$Serving <- 0
 df_long$Defense <- 0
 df_long$Cleanliness <- 0
 
-row <- 1
+
 for (row in 1:nrow(df_long)){
   number = as.numeric(str_sub(df_long$group[row],-1,-1))
   df_long$Hitting[row] <- as.numeric(df_long[row,4+number])
@@ -28,18 +28,15 @@ for (row in 1:nrow(df_long)){
   df_long$Cleanliness[row] = as.numeric(df_long[row, 16+number])
 }
 
-df_long$Hitting <- df_long$Hitting/max(df_long$Hitting)
-df_long$Serving <- df_long$Serving/max(df_long$Serving)
-df_long$Defense <- df_long$Defense/max(df_long$Defense)
-df_long$Cleanliness <- df_long$Cleanliness/max(df_long$Cleanliness)
+radar <- df_long[df_long$GameID == 1 & df_long$Game == 1,c(1, 21:24)]
+radar$Hitting <- radar$Hitting/max(radar$Hitting)
+radar$Serving <- radar$Serving/max(radar$Serving)
+radar$Defense <- radar$Defense/max(radar$Defense)
+radar$Cleanliness <- radar$Cleanliness/max(radar$Cleanliness)
 
 
 
-
-vis <- df_long[1:4,c(1, 21:24)]
-match_stats$Tournament
-
-ggradar(vis)
+ggradar(radar)
 
 df_longer <- df_long %>% 
   gather(key = "Stat", value = "RPR_Score", Hitting, Serving, Defense, Cleanliness) %>%
@@ -86,9 +83,6 @@ funnel_data <- df %>%
 
 # Density RPRs ------------------------------------------------------------
 
-labs <- df_longer[df_longer$GameID == 1 & df_longer$Game == 1,]
-labs$test <- NA
-labs$test[labs$GameID == 1 & labs$Game == 1] = 1
     
   ggplot(data = df_long, aes(x = Hitting)) +
     geom_density(color = 'black', fill = 'indianred', alpha = .4)
@@ -100,12 +94,49 @@ labs$test[labs$GameID == 1 & labs$Game == 1] = 1
   ggplot(data = df_longer, aes(y = RPR_Score, x = Stat)) +
     geom_boxplot() +
     geom_jitter(width = .3)+
+    geom_jitter(data = labs, aes(x = Stat, y = RPR_Score, color = group), size = 3)
+    geom_point(data = labs, aes(x = Stat, y = RPR_Score, color = group), size = 3)
+  
+  
     geom_point(data = labs[labs$group == "Player1",], aes(x = Stat, y = RPR_Score), color = "Red")+
     geom_point(data = labs[labs$group == "Player2",], aes(x = Stat, y = RPR_Score), color = "Blue")+
     geom_point(data = labs[labs$group == "Player3",], aes(x = Stat, y = RPR_Score), color = "Green")+
     geom_point(data = labs[labs$group == "Player4",], aes(x = Stat, y = RPR_Score), color = "Yellow")
   
   ggplot(data = df_longer, aes(y = RPR_Score, x = Stat)) +
-    geom_violin() 
+    geom_violin()+
+    geom_point(data = df_longer[df_longer$GameID == 1 & df_longer$Game == 1,], aes(x = Stat, y = RPR_Score, color = group), size = 3)
   
+
+# Stacked Bar chart -------------------------------------------------------
+
+df$ID <- paste(df$GameID, "_", df$Game)
+df$Crossings <- as.character(df$Crossings)
+
+stacked <- df %>% 
+  group_by(ID, Crossings) %>% 
+  summarize(count = n()) %>%
+  arrange(Crossings, ID)
+
+glimpse(stacked)
+
   
+Stacked_bc <- ggplot(stacked, aes(x = factor(ID), y = count, fill = factor(Crossings)))+
+  geom_bar(position = "fill", stat = "identity")+
+  coord_flip()
+Stacked_bc
+
+# Yet another challenge is the stacked bar plot:
+ggplot(data = rs4, aes(x = factor(Age), y = number, fill = factor(Gender))) +
+  geom_bar(na.rm = TRUE, position = "stack", width = 0.5, stat = "identity") +
+  ggtitle('Gender and age in the sample') +
+  xlab('Age') +
+  ylab('Population') +
+  labs(fill = 'Gender') +
+  theme_minimal() +
+  scale_fill_manual(values = c('grey78', 'khaki'))
+
+
+fig <- plot_ly(data, x = ~x1, y = ~y, type = 'bar', orientation = 'h',
+               marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                             line = list(color = 'rgb(248, 248, 249)', width = 1))) 
