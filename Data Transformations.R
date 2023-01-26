@@ -8,7 +8,7 @@ setwd("C:/Users/jdudzik/Documents/Studia/Adv Vis in R/Visualising-Roundnet-in-R"
 #install.packages("data.table")
 #install.packages("magrittr")
 library(readr)
-df <- read_delim("Roundnet_dataset2.csv", 
+df <- read_delim("Roundnet_dataset3.csv", 
                                delim = ";", escape_double = FALSE, trim_ws = TRUE)
 
 library(dplyr)
@@ -466,6 +466,11 @@ for (row in 2:nrow(cs_df)){
   }
 }
 
+
+cs_df$RPR_1 <- (cs_df$Cleanliness_1+cs_df$Hitting_1+cs_df$Defense_1+cs_df$Cleanliness_1)*100/63.6
+cs_df$RPR_2 <- (cs_df$Cleanliness_2+cs_df$Hitting_2+cs_df$Defense_2+cs_df$Cleanliness_2)*100/63.6
+cs_df$RPR_3 <- (cs_df$Cleanliness_3+cs_df$Hitting_3+cs_df$Defense_3+cs_df$Cleanliness_3)*100/63.6
+cs_df$RPR_4 <- (cs_df$Cleanliness_4+cs_df$Hitting_4+cs_df$Defense_4+cs_df$Cleanliness_4)*100/63.6
 # Grouping stats by game --------------------------------------------------
 
 
